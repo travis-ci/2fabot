@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/nlopes/slack"
 	"github.com/pkg/errors"
 )
@@ -20,8 +18,6 @@ func (s *slackService) Has2FA(userID string) (bool, error) {
 	if user == nil {
 		return false, errors.Errorf("no user with ID %s", userID)
 	}
-
-	fmt.Printf("user info for %s: %+v\n", userID, *user)
 
 	return user.Has2FA, nil
 }
