@@ -109,11 +109,7 @@ type msgServiceInfo struct {
 func notifyUsers(config Config, status map[string][]string) {
 	client := slack.New(os.Getenv("SLACK_TOKEN"))
 
-	msgTemplate := `Hi, you don't have 2fa on these services, please enable it:
-{{ range . }}- {{ .Description }} (instructions to enable: {{ .URL }})
-{{ end }}`
-
-	t := template.Must(template.New("message").Parse(msgTemplate))
+	t := template.Must(template.New("message").Parse(os.Getenv("MESSAGE_TEMPLATE")))
 
 	for chatUserID, services := range status {
 		_, _, imID, err := client.OpenIMChannel(chatUserID)
