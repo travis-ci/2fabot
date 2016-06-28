@@ -2,11 +2,11 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"strings"
 	"text/template"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/nlopes/slack"
 )
 
@@ -68,7 +68,10 @@ func createServices(config Config) map[string]Service {
 	for alias, serviceConfig := range config.Services {
 		service, err := NewService(serviceConfig.Type, serviceConfig.Config)
 		if err != nil {
-			fmt.Printf("could create %s service: %s\n", alias, err)
+			logrus.WithFields(logrus.Fields{
+				"service_name": alias,
+				"err":          err,
+			}).Fatal("couldn't create service")
 			os.Exit(1)
 		}
 		services[alias] = service
@@ -84,7 +87,12 @@ func findStatuses(config Config, services map[string]Service) map[string][]strin
 		for serviceUserID, chatUserID := range serviceConfig.UserMap {
 			ok, err := services[alias].Has2FA(serviceUserID)
 			if err != nil {
-				fmt.Printf("couldn't get 2fa information for %s (chat ID: %s) on %s: %s\n", serviceUserID, chatUserID, alias, err)
+				logrus.WithFields(logrus.Fields{
+					"service_user_id": serviceUserID,
+					"chat_user_id":    chatUserID,
+					"service_name":    alias,
+					"err":             err,
+				}).Error("couldn't get 2fa information")
 				continue
 			}
 
@@ -114,7 +122,10 @@ func notifyUsers(config Config, status map[string][]string) {
 	for chatUserID, services := range status {
 		_, _, imID, err := client.OpenIMChannel(chatUserID)
 		if err != nil {
-			fmt.Printf("Couldn't open IM channel for user %s: %s\n", chatUserID, err)
+			logrus.WithFields(logrus.Fields{
+				"chat_user_id": chatUserID,
+				"err":          err,
+			}).Error("couldn't open IM channel")
 			continue
 		}
 
@@ -129,7 +140,10 @@ func notifyUsers(config Config, status map[string][]string) {
 		buf := new(bytes.Buffer)
 		err = t.Execute(buf, data)
 		if err != nil {
-			fmt.Printf("Couldn't create message for %s: %s\n", chatUserID, err)
+			logrus.WithFields(logrus.Fields{
+				"chat_user_id": chatUserID,
+				"err":          err,
+			}).Error("couldn't create message from template")
 			continue
 		}
 
@@ -137,10 +151,16 @@ func notifyUsers(config Config, status map[string][]string) {
 			UnfurlLinks: false,
 			AsUser:      false,
 		})
+
+		logrus.WithFields(logrus.Fields{
+			"chat_user_id": chatUserID,
+		}).Info("notified user")
 	}
 }
 
 func main() {
+	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
+
 	config := ParseConfig(os.Environ())
 	services := createServices(config)
 	statuses := findStatuses(config, services)
