@@ -56,9 +56,9 @@ func (s *githubService) refresh() {
 		page = resp.NextPage
 	}
 
+	s.has2fa = make([]string, 0)
 	page = 1
 	for page != 0 {
-		s.has2fa = make([]string, 0)
 		usersWith2fa, resp, err := s.client.Organizations.ListMembers(s.org, &github.ListMembersOptions{
 			Filter:      "all",
 			ListOptions: github.ListOptions{Page: page},
