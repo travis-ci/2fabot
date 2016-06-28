@@ -37,26 +37,42 @@ func (s *githubService) Has2FA(userID string) (bool, error) {
 }
 
 func (s *githubService) refresh() {
-	usersWithout2fa, _, err := s.client.Organizations.ListMembers(s.org, &github.ListMembersOptions{Filter: "2fa_disabled"})
-	if err != nil {
-		s.membersError = err
-		return
+	s.no2fa = make([]string, 0)
+	page := 1
+	for page != 0 {
+		usersWithout2fa, resp, err := s.client.Organizations.ListMembers(s.org, &github.ListMembersOptions{
+			Filter:      "2fa_disabled",
+			ListOptions: github.ListOptions{Page: page},
+		})
+		if err != nil {
+			s.membersError = err
+			return
+		}
+
+		for _, user := range usersWithout2fa {
+			s.no2fa = append(s.no2fa, *user.Login)
+		}
+
+		page = resp.NextPage
 	}
 
-	s.no2fa = make([]string, 0, len(usersWithout2fa))
-	for _, user := range usersWithout2fa {
-		s.no2fa = append(s.no2fa, *user.Login)
-	}
+	page = 1
+	for page != 0 {
+		s.has2fa = make([]string, 0)
+		usersWith2fa, resp, err := s.client.Organizations.ListMembers(s.org, &github.ListMembersOptions{
+			Filter:      "all",
+			ListOptions: github.ListOptions{Page: page},
+		})
+		if err != nil {
+			s.membersError = err
+			return
+		}
 
-	usersWith2fa, _, err := s.client.Organizations.ListMembers(s.org, &github.ListMembersOptions{Filter: "all"})
-	if err != nil {
-		s.membersError = err
-		return
-	}
+		for _, user := range usersWith2fa {
+			s.has2fa = append(s.has2fa, *user.Login)
+		}
 
-	s.has2fa = make([]string, 0, len(usersWith2fa))
-	for _, user := range usersWith2fa {
-		s.has2fa = append(s.has2fa, *user.Login)
+		page = resp.NextPage
 	}
 }
 
