@@ -150,6 +150,8 @@ func notifyUsers(config Config, status map[string][]string) {
 		client.PostMessage(imID, buf.String(), slack.PostMessageParameters{
 			UnfurlLinks: false,
 			AsUser:      false,
+			Username:    "2fabot",
+			IconEmoji:   ":lock:",
 		})
 
 		logrus.WithFields(logrus.Fields{
