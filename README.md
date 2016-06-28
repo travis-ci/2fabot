@@ -24,6 +24,12 @@ you wish to add.
 * `SERVICES`: 
 * `SLACK_TOKEN`: A token for a bot user on the Slack team you wish to send the
   reminders on. See the "Setup" section above for how to make a bot user.
+* `MESSAGE_TEMPLATE`: A template for the Slack message to be sent to users with
+  at least one service missing two-factor authentication. For example, it could look something like this:
+
+    Hi! It looks like you're missing two-factor authentication on some services, could you please look into enabling it once you have a free moment?
+    {{ range . }}- {{ .Description }} (how to enable: {{ .URL }})
+    {{ end }}
 
 ## License
 
