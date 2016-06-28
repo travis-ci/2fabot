@@ -160,11 +160,27 @@ func notifyUsers(config Config, status map[string][]string) {
 	}
 }
 
+func printStatuses(config Config, status map[string][]string) {
+	for chatUserID, services := range status {
+		logrus.WithFields(logrus.Fields{
+			"chat_user_id": chatUserID,
+			"services":     services,
+		}).Info("user missing 2fa on some services")
+	}
+}
+
 func main() {
 	logrus.SetFormatter(&logrus.TextFormatter{DisableColors: true})
 
 	config := ParseConfig(os.Environ())
 	services := createServices(config)
 	statuses := findStatuses(config, services)
-	notifyUsers(config, statuses)
+
+	if len(os.Args) == 1 {
+		notifyUsers(config, statuses)
+	} else if len(os.Args) == 2 && os.Args[1] == "-n" {
+		printStatuses(config, statuses)
+	} else {
+		logrus.Errorf("usage: %s [-n]", os.Args[0])
+	}
 }
